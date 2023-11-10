@@ -50,13 +50,17 @@ func (params CreateUserParams) Validate() map[string]string {
 	if len(params.Password) < minPasswordLength {
 		errors["password"] = fmt.Sprintf("password must be at least %d characters", minPasswordLength)
 	}
-	if !isEmailValid(params.Email) {
+	if !IsEmailValid(params.Email) {
 		errors["email"] = fmt.Sprintln("email is invalid")
 	}
 	return errors
 }
 
-func isEmailValid(e string) bool {
+func IsValidPassword(encpw, pw string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(encpw), []byte(pw)) == nil
+}
+
+func IsEmailValid(e string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return emailRegex.MatchString(e)
 }
