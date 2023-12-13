@@ -11,14 +11,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/vUdayKumarr/hotel-reservation/db"
+	"github.com/vUdayKumarr/hotel-reservation/db/fixtures"
 	"github.com/vUdayKumarr/hotel-reservation/types"
 )
 
 func insertTestUser(t *testing.T, userStore db.UserStore) *types.User {
 	user, err := types.NewUserFromParams(types.CreateUserParams{
 		FirstName: "james",
-		LastName:  "foo",
-		Email:     "james@foo.com",
+		LastName:  "bond",
+		Email:     "james@bond.com",
 		Password:  "supersecurepassword",
 	})
 	if err != nil {
@@ -33,15 +34,15 @@ func insertTestUser(t *testing.T, userStore db.UserStore) *types.User {
 func TestAuthenticateSuccess(t *testing.T) {
 	tdb := setup(t)
 	defer tdb.teardown(t)
-	insertedUser := insertTestUser(t, tdb.UserStore)
+	insertedUser := fixtures.AddUser(tdb.Store, "james", "bond", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler((tdb.UserStore))
+	authHandler := NewAuthHandler((tdb.User))
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
 	params := AuthParams{
-		Email:    "james@foo.com",
-		Password: "supersecurepassword",
+		Email:    "james@bond.com",
+		Password: "james_bond",
 	}
 	b, _ := json.Marshal(params)
 	req := httptest.NewRequest("POST", "/auth", bytes.NewReader(b))
@@ -69,14 +70,14 @@ func TestAuthenticateSuccess(t *testing.T) {
 func TestAuthenticateWithWrongPassword(t *testing.T) {
 	tdb := setup(t)
 	defer tdb.teardown(t)
-	insertTestUser(t, tdb.UserStore)
+	fixtures.AddUser(tdb.Store, "james", "bond", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler((tdb.UserStore))
+	authHandler := NewAuthHandler((tdb.User))
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
 	params := AuthParams{
-		Email:    "james@foo.com",
+		Email:    "james@bond.com",
 		Password: "supersecurepasswordnotcorrect",
 	}
 	b, _ := json.Marshal(params)
