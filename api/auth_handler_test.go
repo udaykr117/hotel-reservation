@@ -61,7 +61,6 @@ func TestAuthenticateSuccess(t *testing.T) {
 	if authResp.Token == "" {
 		t.Fatal("expected JWT token to be present in the auth response")
 	}
-	//set the encrypted password to empty string because we do not return that in any JSON response
 	insertedUser.EncryptedPassword = ""
 	if !reflect.DeepEqual(insertedUser, authResp.User) {
 		t.Fatal("expected user to be present in the auth response")
