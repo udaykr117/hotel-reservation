@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/vUdayKumarr/hotel-reservation/api/middleware"
 	"github.com/vUdayKumarr/hotel-reservation/db/fixtures"
 	"github.com/vUdayKumarr/hotel-reservation/types"
 )
@@ -26,8 +25,8 @@ func TestUserGetBooking(t *testing.T) {
 		from           = time.Now()
 		till           = from.AddDate(0, 0, 2)
 		booking        = fixtures.AddBooking(db.Store, user.ID, room.ID, from, till)
-		app            = fiber.New()
-		route          = app.Group("/", middleware.JWTAuthentication(db.User))
+		app            = fiber.New(fiber.Config{ErrorHandler: Errorhandler})
+		route          = app.Group("/", JWTAuthentication(db.User))
 		bookingHandler = NewBookingHandler(db.Store)
 	)
 
@@ -67,20 +66,19 @@ func TestAdminGetBookings(t *testing.T) {
 	defer db.teardown(t)
 
 	var (
-		adminUser = fixtures.AddUser(db.Store, "admin", "admin", true)
-		user      = fixtures.AddUser(db.Store, "james", "bond", false)
-		hotel     = fixtures.AddHotel(db.Store, "Taj", "Vizag", 5, nil)
-		room      = fixtures.AddRoom(db.Store, "small", true, 90, hotel.ID)
-
+		adminUser      = fixtures.AddUser(db.Store, "admin", "admin", true)
+		user           = fixtures.AddUser(db.Store, "james", "bond", false)
+		hotel          = fixtures.AddHotel(db.Store, "Taj", "Vizag", 5, nil)
+		room           = fixtures.AddRoom(db.Store, "small", true, 90, hotel.ID)
 		from           = time.Now()
 		till           = from.AddDate(0, 0, 2)
 		booking        = fixtures.AddBooking(db.Store, user.ID, room.ID, from, till)
-		app            = fiber.New()
-		admin          = app.Group("/", middleware.JWTAuthentication(db.User), middleware.AdminAuth)
-		bookinghandler = NewBookingHandler(db.Store)
+		app            = fiber.New(fiber.Config{ErrorHandler: Errorhandler})
+		admin          = app.Group("/", JWTAuthentication(db.User), AdminAuth)
+		bookingHandler = NewBookingHandler(db.Store)
 	)
 
-	admin.Get("/", bookinghandler.HandleGetBookings)
+	admin.Get("/", bookingHandler.HandleGetBookings)
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Add("X-Api-Token", CreateTokenFromUser(adminUser))
 	resp, err := app.Test(req)
@@ -99,21 +97,20 @@ func TestAdminGetBookings(t *testing.T) {
 	}
 	have := bookings[0]
 	if have.ID != booking.ID {
-		t.Fatalf("expected booking id %d got %d", booking.ID, have.ID)
+		t.Fatalf("expected %s got %s", booking.ID, have.ID)
 	}
 	if have.UserID != booking.UserID {
-		t.Fatalf("expected user id %d got %d", booking.UserID, have.UserID)
+		t.Fatalf("expected %s got %s", booking.UserID, have.UserID)
 	}
 
-	// test non admin cannot access bookings
+	// test non-admin cannot access the bookings
 	req = httptest.NewRequest("GET", "/", nil)
 	req.Header.Add("X-Api-Token", CreateTokenFromUser(user))
 	resp, err = app.Test(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode == http.StatusOK {
-		t.Fatalf("expected a non 200 statuscode got this %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status unauthorized but got %d", resp.StatusCode)
 	}
-
 }
