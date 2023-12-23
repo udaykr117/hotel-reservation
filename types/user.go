@@ -66,6 +66,8 @@ func IsEmailValid(e string) bool {
 }
 
 type User struct {
+	//MongoID
+	//PostgresID
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	FirstName         string             `bson:"firstName" json:"firstName"`
 	LastName          string             `bson:"lastName" json:"lastName"`
